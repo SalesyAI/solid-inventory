@@ -278,6 +278,7 @@ function InventoryApp() {
     e.preventDefault();
     if (!isAdmin) return;
 
+    setIsSaving(true);
     const productData = {
       name: formData.name,
       price: Number(formData.price),
@@ -293,12 +294,14 @@ function InventoryApp() {
       } else {
         await addDoc(collection(db, 'products'), productData);
       }
-      setIsModalOpen(false);
+      closeModal();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       alert('Failed to save product: ' + errorMessage);
       console.error('Save Product Error:', error);
       handleFirestoreError(error, OperationType.WRITE, 'products');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -316,6 +319,7 @@ function InventoryApp() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
   const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formStep, setFormStep] = useState<1 | 2>(1);
   const [formData, setFormData] = useState({
@@ -418,8 +422,37 @@ function InventoryApp() {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, image: reader.result as string }));
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 800; // max width or height
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setFormData(prev => ({ ...prev, image: dataUrl }));
+        };
+        if (event.target?.result) {
+          img.src = event.target.result as string;
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -1116,16 +1149,18 @@ function InventoryApp() {
                           <button 
                             type="button"
                             onClick={handleSaveProduct}
-                            className="premium-active w-full bg-violet-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-violet-200"
+                            disabled={isSaving}
+                            className={`premium-active w-full text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all ${isSaving ? 'bg-violet-400 cursor-not-allowed shadow-none' : 'bg-violet-600 shadow-violet-200'}`}
                           >
-                            <Check className="w-5 h-5" />
-                            {editingProduct ? 'Update Product' : 'Create Product'}
+                            <Check className={`w-5 h-5 ${isSaving ? 'animate-bounce' : ''}`} />
+                            {isSaving ? 'Saving...' : (editingProduct ? 'Update Product' : 'Create Product')}
                           </button>
                           {!formData.image && (
                             <button 
                               type="button"
                               onClick={handleSaveProduct}
-                              className="premium-active w-full text-slate-400 py-3 rounded-2xl font-bold text-sm"
+                              disabled={isSaving}
+                              className={`premium-active w-full py-3 rounded-2xl font-bold text-sm transition-all ${isSaving ? 'text-slate-300 cursor-not-allowed' : 'text-slate-400'}`}
                             >
                               Skip — Add image later
                             </button>
