@@ -24,6 +24,18 @@ button, a {
   touch-action: manipulation;
 }
 
+/* iOS Safari Input Auto-Zoom Fix */
+/* Forces inputs to 16px to prevent Safari from automatically zooming in on focus */
+input[type="text"],
+input[type="number"],
+input[type="url"],
+input[type="password"],
+input[type="email"],
+select,
+textarea {
+  font-size: 16px !important;
+}
+
 /* Premium soft shadows and glass effects */
 .glass-panel {
   @apply backdrop-blur-2xl bg-white/80 border border-white/50 shadow-2xl;
