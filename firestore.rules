@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // SINGLE USER ADMIN RULES (NO AUTHENTICATION)
+    // ===============================================================
+    //
+    // WARNING: These rules allow public access to the database.
+    // This configuration was requested to replace Firebase Authentication
+    // with a simple client-side password gate.
+    //
+    // ===============================================================
+
+    function isValidProduct(data) {
+      return data.keys().hasAll(['name', 'price', 'stock', 'userId', 'category']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.price is number && data.price >= 0 &&
+             data.stock is number && data.stock >= 0 &&
+             data.category is string && data.category.size() > 0 &&
+             data.userId == 'admin';
+    }
+
+    function isValidSale(data) {
+      return data.keys().hasAll(['productId', 'productName', 'price', 'timestamp', 'userId']) &&
+             data.productId is string &&
+             data.productName is string &&
+             data.price is number && data.price >= 0 &&
+             data.userId == 'admin';
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update: if isValidProduct(request.resource.data);
+      allow delete: if true;
+    }
+
+    match /sales/{saleId} {
+      allow read: if true;
+      allow create: if isValidSale(request.resource.data);
+      allow update, delete: if true;
+    }
+    
+    match /users/{userId} {
+      allow read, write: if false; // Users collection no longer used
+    }
+  }
+}

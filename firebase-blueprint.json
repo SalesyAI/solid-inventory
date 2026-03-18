@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "An inventory item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier" },
+        "name": { "type": "string", "description": "Product name" },
+        "price": { "type": "number", "description": "Price in BDT" },
+        "stock": { "type": "number", "description": "Current stock count" },
+        "image": { "type": "string", "description": "Image URL" },
+        "category": { "type": "string", "description": "Product category" },
+        "userId": { "type": "string", "description": "Owner UID (always 'admin')" }
+      },
+      "required": ["name", "price", "stock", "userId"]
+    },
+    "Sale": {
+      "title": "Sale",
+      "description": "A recorded sale transaction",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier" },
+        "productId": { "type": "string", "description": "Reference to Product ID" },
+        "productName": { "type": "string", "description": "Name of product at time of sale" },
+        "price": { "type": "number", "description": "Sale price in BDT" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the sale occurred" },
+        "userId": { "type": "string", "description": "Owner UID (always 'admin')" }
+      },
+      "required": ["productId", "productName", "price", "timestamp", "userId"]
+    }
+  },
+  "firestore": {
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Collection of inventory products"
+    },
+    "/sales/{saleId}": {
+      "schema": "Sale",
+      "description": "Collection of sales records"
+    }
+  }
+}
