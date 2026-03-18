@@ -22,7 +22,11 @@ import {
   Upload,
   Image as ImageIcon,
   LogOut,
-  LogIn
+  LogIn,
+  ArrowLeft,
+  Camera,
+  ChevronRight,
+  Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -313,6 +317,7 @@ function InventoryApp() {
   const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
   const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formStep, setFormStep] = useState<1 | 2>(1);
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -320,6 +325,36 @@ function InventoryApp() {
     image: '',
     category: 'Other'
   });
+
+  // Browser History API: allow hardware back button / swipe gesture to close modals
+  const anyModalOpen = isModalOpen || isSalesModalOpen || isLowStockModalOpen;
+
+  useEffect(() => {
+    if (!anyModalOpen) return;
+
+    // Push a dummy state so "back" pops this instead of leaving
+    window.history.pushState({ modal: true }, '');
+
+    const handlePopState = () => {
+      // Close whichever modal is open
+      if (isModalOpen) setIsModalOpen(false);
+      if (isSalesModalOpen) setIsSalesModalOpen(false);
+      if (isLowStockModalOpen) setIsLowStockModalOpen(false);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+    };
+  }, [anyModalOpen]);
+
+  // Helper: close modal AND clean up the pushed history entry
+  const closeModal = () => {
+    if (anyModalOpen) {
+      window.history.back(); // This pops the dummy state we pushed
+    }
+  };
 
   const salesToday = useMemo(() => {
     const today = new Date().toDateString();
@@ -375,6 +410,7 @@ function InventoryApp() {
         category: 'Other'
       });
     }
+    setFormStep(1);
     setIsModalOpen(true);
   };
 
@@ -545,7 +581,7 @@ function InventoryApp() {
           {loginError && <p className="text-rose-500 text-xs font-bold">{loginError}</p>}
           <button 
             type="submit"
-            className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-xl active:scale-[0.98] transition-all"
+            className="premium-active w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-xl shadow-slate-200"
           >
             <LogIn className="w-5 h-5" />
             Enter Dashboard
@@ -638,21 +674,21 @@ function InventoryApp() {
                 <div className="flex items-center gap-1">
                   <button 
                     onClick={() => handleDownloadData('daily')}
-                    className="flex items-center gap-1 text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-1.5 rounded-lg uppercase hover:bg-violet-100 transition-colors border border-violet-100"
+                    className="premium-active flex items-center gap-1 text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-1.5 rounded-lg uppercase hover:bg-violet-100 transition-colors border border-violet-100"
                   >
                     <Download className="w-3 h-3" />
                     Daily
                   </button>
                   <button 
                     onClick={() => handleDownloadData('weekly')}
-                    className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1.5 rounded-lg uppercase hover:bg-emerald-100 transition-colors border border-emerald-100"
+                    className="premium-active flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1.5 rounded-lg uppercase hover:bg-emerald-100 transition-colors border border-emerald-100"
                   >
                     <Download className="w-3 h-3" />
                     Weekly
                   </button>
                   <button 
                     onClick={() => handleDownloadData('monthly')}
-                    className="flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1.5 rounded-lg uppercase hover:bg-amber-100 transition-colors border border-amber-100"
+                    className="premium-active flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1.5 rounded-lg uppercase hover:bg-amber-100 transition-colors border border-amber-100"
                   >
                     <Download className="w-3 h-3" />
                     Monthly
@@ -750,7 +786,7 @@ function InventoryApp() {
               <button 
                 onClick={handleLogSale}
                 disabled={!selectedProductId}
-                className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-[0.98] transition-all disabled:opacity-50 disabled:active:scale-100"
+                className="premium-active w-full bg-slate-900 text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-slate-200 disabled:opacity-50 disabled:shadow-none"
               >
                 <ShoppingCart className="w-4 h-4" />
                 LOG SALE
@@ -771,7 +807,7 @@ function InventoryApp() {
               <button
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
-                className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide transition-colors ${
+                className={`premium-active flex-shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wide transition-all ${
                   categoryFilter === cat
                     ? 'bg-violet-600 text-white shadow-md shadow-violet-200'
                     : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
@@ -787,7 +823,8 @@ function InventoryApp() {
                 <motion.div 
                   layout
                   key={product.id}
-                  className="relative group bg-white rounded-2xl overflow-hidden border border-slate-100"
+                  whileTap={{ scale: 0.98 }}
+                  className="relative group bg-white rounded-2xl overflow-hidden border border-slate-100 premium-shadow transition-all"
                 >
                   <div className="aspect-square bg-slate-100 relative overflow-hidden">
                     <img 
@@ -853,7 +890,7 @@ function InventoryApp() {
         <div className="max-w-md w-full">
           <button 
             onClick={() => handleOpenModal()}
-            className="w-full bg-violet-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-violet-200 active:scale-[0.98] transition-all"
+            className="premium-active w-full bg-violet-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-violet-200"
           >
             <Plus className="w-5 h-5" />
             ADD NEW PRODUCT
@@ -861,143 +898,244 @@ function InventoryApp() {
         </div>
       </div>
 
-      {/* Product Modal */}
+      {/* Product Modal — Multi-Step Wizard */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4">
+          <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={closeModal}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
             <motion.div 
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl"
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+              className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl premium-shadow overflow-hidden border border-slate-100"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-slate-900">
-                  {editingProduct ? 'Edit Product' : 'Add New Product'}
-                </h3>
-                <button 
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-slate-500" />
-                </button>
+              {/* Progress Indicator */}
+              <div className="px-6 pt-5 pb-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`h-1 flex-1 rounded-full transition-colors duration-300 ${formStep >= 1 ? 'bg-violet-600' : 'bg-slate-200'}`} />
+                  <div className={`h-1 flex-1 rounded-full transition-colors duration-300 ${formStep >= 2 ? 'bg-violet-600' : 'bg-slate-200'}`} />
+                </div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">
+                  Step {formStep} of 2
+                </p>
               </div>
 
-              <form onSubmit={handleSaveProduct} className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Product Name</label>
-                  <input 
-                    required
-                    type="text"
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-violet-500"
-                    placeholder="e.g. Cricket Bat"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Category</label>
-                  <div className="flex gap-2 flex-wrap">
-                    {PRODUCT_CATEGORIES.map(cat => (
-                      <button
-                        key={cat}
-                        type="button"
-                        onClick={() => setFormData({...formData, category: cat})}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wide transition-colors ${
-                          formData.category === cat
-                            ? 'bg-violet-600 text-white'
-                            : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                        }`}
-                      >
-                        {cat}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
+              {/* Header */}
+              <div className="px-6 pt-2 pb-4">
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={formStep === 1 ? closeModal : () => setFormStep(1)}
+                    className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
+                  >
+                    <ArrowLeft className="w-5 h-5 text-slate-700" />
+                  </button>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Buying Price (Cost)</label>
-                    <input 
-                      required
-                      type="number"
-                      value={formData.price}
-                      onChange={e => setFormData({...formData, price: e.target.value})}
-                      className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-violet-500"
-                      placeholder="0"
-                    />
+                    <h3 className="text-xl font-bold text-slate-900">
+                      {editingProduct ? 'Edit Product' : 'Add New Product'}
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      {formStep === 1 ? 'Product details' : 'Product image'}
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Initial Stock</label>
-                  <input 
-                    required
-                    type="number"
-                    value={formData.stock}
-                    onChange={e => setFormData({...formData, stock: e.target.value})}
-                    className="w-full bg-slate-50 border-none rounded-xl py-3 px-4 focus:ring-2 focus:ring-violet-500"
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Product Image</label>
-                  <div className="flex flex-col gap-3">
-                    {formData.image ? (
-                      <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
-                        <img 
-                          src={formData.image} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover"
-                        />
+              </div>
+
+              {/* Step Content with Animated Transitions */}
+              <div className="relative overflow-hidden">
+                <AnimatePresence mode="wait" initial={false}>
+                  {formStep === 1 && (
+                    <motion.div
+                      key="step-1"
+                      initial={{ x: -40, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: -40, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="px-6 pb-6"
+                    >
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1.5 block">Product Name</label>
+                          <input 
+                            type="text"
+                            value={formData.name}
+                            onChange={e => setFormData({...formData, name: e.target.value})}
+                            className="w-full bg-slate-50 border-none rounded-xl py-3.5 px-4 focus:ring-2 focus:ring-violet-500 text-sm"
+                            placeholder="e.g. Cricket Bat"
+                            autoFocus
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase mb-1.5 block">Category</label>
+                          <div className="flex gap-2 flex-wrap">
+                            {PRODUCT_CATEGORIES.map(cat => (
+                              <button
+                                key={cat}
+                                type="button"
+                                onClick={() => setFormData({...formData, category: cat})}
+                                className={`px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wide transition-all ${
+                                  formData.category === cat
+                                    ? 'bg-violet-600 text-white shadow-md shadow-violet-200'
+                                    : 'bg-slate-100 text-slate-500 active:scale-95'
+                                }`}
+                              >
+                                {cat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-bold text-slate-400 uppercase mb-1.5 block">Buying Price</label>
+                            <input 
+                              type="number"
+                              value={formData.price}
+                              onChange={e => setFormData({...formData, price: e.target.value})}
+                              className="w-full bg-slate-50 border-none rounded-xl py-3.5 px-4 focus:ring-2 focus:ring-violet-500 text-sm"
+                              placeholder="0"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-slate-400 uppercase mb-1.5 block">Initial Stock</label>
+                            <input 
+                              type="number"
+                              value={formData.stock}
+                              onChange={e => setFormData({...formData, stock: e.target.value})}
+                              className="w-full bg-slate-50 border-none rounded-xl py-3.5 px-4 focus:ring-2 focus:ring-violet-500 text-sm"
+                              placeholder="0"
+                            />
+                          </div>
+                        </div>
+
                         <button 
                           type="button"
-                          onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
-                          className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full backdrop-blur-sm hover:bg-black/70 transition-colors"
+                          onClick={() => {
+                            if (!formData.name || !formData.price || !formData.stock) {
+                              alert('Please fill in all required fields.');
+                              return;
+                            }
+                            setFormStep(2);
+                          }}
+                          className="premium-active w-full bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg mt-2 shadow-slate-200"
                         >
-                          <X className="w-4 h-4" />
+                          Next: Add Image
+                          <ChevronRight className="w-5 h-5" />
                         </button>
                       </div>
-                    ) : (
-                      <label className="w-full aspect-video rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-100 transition-colors">
-                        <div className="flex flex-col items-center gap-2 text-slate-400">
-                          <Upload className="w-8 h-8" />
-                          <span className="text-xs font-bold uppercase tracking-tighter">Upload Image</span>
+                    </motion.div>
+                  )}
+
+                  {formStep === 2 && (
+                    <motion.div
+                      key="step-2"
+                      initial={{ x: 40, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      exit={{ x: 40, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="px-6 pb-6"
+                    >
+                      <div className="space-y-4">
+                        {/* Image Preview */}
+                        {formData.image ? (
+                          <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+                            <img 
+                              src={formData.image} 
+                              alt="Preview" 
+                              className="w-full h-full object-cover"
+                            />
+                            <button 
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, image: '' }))}
+                              className="absolute top-3 right-3 p-2 bg-black/50 text-white rounded-xl backdrop-blur-sm active:scale-90 transition-all"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                            <div className="absolute bottom-3 left-3 bg-emerald-500 text-white px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              Image Added
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="grid grid-cols-2 gap-3">
+                            {/* Upload from Gallery */}
+                            <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center cursor-pointer active:bg-slate-100 transition-colors">
+                              <div className="flex flex-col items-center gap-2 text-slate-400">
+                                <div className="w-14 h-14 bg-violet-100 rounded-2xl flex items-center justify-center">
+                                  <Upload className="w-7 h-7 text-violet-500" />
+                                </div>
+                                <span className="text-[11px] font-bold text-slate-500">Gallery</span>
+                              </div>
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                onChange={handleImageUpload}
+                                className="hidden" 
+                              />
+                            </label>
+                            {/* Take Photo with Camera */}
+                            <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 flex flex-col items-center justify-center cursor-pointer active:bg-slate-100 transition-colors">
+                              <div className="flex flex-col items-center gap-2 text-slate-400">
+                                <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center">
+                                  <Camera className="w-7 h-7 text-amber-500" />
+                                </div>
+                                <span className="text-[11px] font-bold text-slate-500">Camera</span>
+                              </div>
+                              <input 
+                                type="file" 
+                                accept="image/*" 
+                                capture="environment"
+                                onChange={handleImageUpload}
+                                className="hidden" 
+                              />
+                            </label>
+                          </div>
+                        )}
+
+                        {/* URL Input */}
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                            <ImageIcon className="w-4 h-4 text-slate-400" />
+                          </div>
+                          <input 
+                            type="url"
+                            value={formData.image}
+                            onChange={e => setFormData({...formData, image: e.target.value})}
+                            className="w-full bg-slate-50 border-none rounded-xl py-3.5 pl-10 pr-4 text-xs focus:ring-2 focus:ring-violet-500"
+                            placeholder="Or paste image URL..."
+                          />
                         </div>
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          onChange={handleImageUpload}
-                          className="hidden" 
-                        />
-                      </label>
-                    )}
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-                        <ImageIcon className="w-4 h-4 text-slate-400" />
+
+                        {/* Skip / Submit */}
+                        <div className="flex flex-col gap-2 mt-2">
+                          <button 
+                            type="button"
+                            onClick={handleSaveProduct}
+                            className="premium-active w-full bg-violet-600 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-violet-200"
+                          >
+                            <Check className="w-5 h-5" />
+                            {editingProduct ? 'Update Product' : 'Create Product'}
+                          </button>
+                          {!formData.image && (
+                            <button 
+                              type="button"
+                              onClick={handleSaveProduct}
+                              className="premium-active w-full text-slate-400 py-3 rounded-2xl font-bold text-sm"
+                            >
+                              Skip — Add image later
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <input 
-                        type="url"
-                        value={formData.image}
-                        onChange={e => setFormData({...formData, image: e.target.value})}
-                        className="w-full bg-slate-50 border-none rounded-xl py-3 pl-10 pr-4 text-xs focus:ring-2 focus:ring-violet-500"
-                        placeholder="Or paste image URL..."
-                      />
-                    </div>
-                  </div>
-                </div>
-                <button 
-                  type="submit"
-                  className="w-full bg-violet-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-violet-200 mt-4 active:scale-[0.98] transition-all"
-                >
-                  {editingProduct ? 'Update Product' : 'Create Product'}
-                </button>
-              </form>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           </div>
         )}
@@ -1011,28 +1149,28 @@ function InventoryApp() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsSalesModalOpen(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={closeModal}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
             <motion.div 
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl max-h-[80vh] flex flex-col"
+              className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 premium-shadow max-h-[80vh] flex flex-col border border-slate-100"
             >
-              <div className="flex items-center justify-between mb-6 flex-shrink-0">
+              <div className="flex items-center gap-3 mb-6 flex-shrink-0">
+                <button 
+                  onClick={closeModal}
+                  className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
+                >
+                  <ArrowLeft className="w-5 h-5 text-slate-700" />
+                </button>
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">Today's Sales</h3>
                   <p className="text-xs text-slate-500">
                     {sales.filter(s => new Date(s.timestamp).toDateString() === new Date().toDateString()).length} transactions recorded
                   </p>
                 </div>
-                <button 
-                  onClick={() => setIsSalesModalOpen(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-slate-500" />
-                </button>
               </div>
 
               <div className="flex-1 overflow-y-auto no-scrollbar space-y-3">
@@ -1088,28 +1226,28 @@ function InventoryApp() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsLowStockModalOpen(false)}
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={closeModal}
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
             />
             <motion.div 
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl max-h-[80vh] flex flex-col"
+              className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl p-6 premium-shadow max-h-[80vh] flex flex-col border border-slate-100"
             >
-              <div className="flex items-center justify-between mb-6 flex-shrink-0">
+              <div className="flex items-center gap-3 mb-6 flex-shrink-0">
+                <button 
+                  onClick={closeModal}
+                  className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center active:scale-90 transition-all flex-shrink-0"
+                >
+                  <ArrowLeft className="w-5 h-5 text-slate-700" />
+                </button>
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">Low Stock Items</h3>
                   <p className="text-xs text-slate-500">
                     {lowStockCount} {lowStockCount === 1 ? 'item' : 'items'} with stock below 5
                   </p>
                 </div>
-                <button 
-                  onClick={() => setIsLowStockModalOpen(false)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                  <X className="w-5 h-5 text-slate-500" />
-                </button>
               </div>
 
               <div className="flex-1 overflow-y-auto no-scrollbar space-y-3">

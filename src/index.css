@@ -5,9 +5,32 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
 body {
-  @apply bg-gray-50 text-slate-900 antialiased;
+  @apply bg-slate-50 text-slate-900;
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Prevent double-tap zooming & prevent text selection on buttons for native app feel */
+button, a {
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+/* Premium soft shadows and glass effects */
+.glass-panel {
+  @apply backdrop-blur-2xl bg-white/80 border border-white/50 shadow-2xl;
+}
+
+.premium-shadow {
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.05);
 }
 
 .ios-blur {
