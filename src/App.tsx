@@ -320,6 +320,7 @@ function InventoryApp() {
   const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
   const [isLowStockModalOpen, setIsLowStockModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeProductActionId, setActiveProductActionId] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [formStep, setFormStep] = useState<1 | 2>(1);
   const [formData, setFormData] = useState({
@@ -857,6 +858,7 @@ function InventoryApp() {
                   layout
                   key={product.id}
                   whileTap={{ scale: 0.98 }}
+                  onClick={() => setActiveProductActionId(activeProductActionId === product.id ? null : product.id)}
                   className="relative group bg-white rounded-2xl overflow-hidden border border-slate-100 premium-shadow transition-all"
                 >
                   <div className="aspect-square bg-slate-100 relative overflow-hidden">
@@ -866,17 +868,23 @@ function InventoryApp() {
                       src={product.image}
                       referrerPolicy="no-referrer"
                     />
-                    {/* Hover Controls */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Hover & Tap Controls */}
+                    <div className={`absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/20 transition-opacity ${activeProductActionId === product.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                       <div className="flex gap-2">
                         <button 
-                          onClick={() => handleUpdateStock(product.id, -1)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateStock(product.id, -1);
+                          }}
                           className="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
                         >
                           <Minus className="w-5 h-5" />
                         </button>
                         <button 
-                          onClick={() => handleUpdateStock(product.id, 1)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpdateStock(product.id, 1);
+                          }}
                           className="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
                         >
                           <Plus className="w-5 h-5" />
@@ -884,13 +892,21 @@ function InventoryApp() {
                       </div>
                       <div className="flex gap-2">
                         <button 
-                          onClick={() => handleOpenModal(product)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenModal(product);
+                            setActiveProductActionId(null);
+                          }}
                           className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button 
-                          onClick={() => handleDeleteProduct(product.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProduct(product.id);
+                            setActiveProductActionId(null);
+                          }}
                           className="w-10 h-10 rounded-full bg-slate-800 text-white flex items-center justify-center shadow-lg active:scale-90 transition-transform"
                         >
                           <Trash2 className="w-4 h-4" />
