@@ -331,34 +331,11 @@ function InventoryApp() {
     category: 'Other'
   });
 
-  // Browser History API: allow hardware back button / swipe gesture to close modals
-  const anyModalOpen = isModalOpen || isSalesModalOpen || isLowStockModalOpen;
-
-  useEffect(() => {
-    if (!anyModalOpen) return;
-
-    // Push a dummy state so "back" pops this instead of leaving
-    window.history.pushState({ modal: true }, '');
-
-    const handlePopState = () => {
-      // Close whichever modal is open
-      if (isModalOpen) setIsModalOpen(false);
-      if (isSalesModalOpen) setIsSalesModalOpen(false);
-      if (isLowStockModalOpen) setIsLowStockModalOpen(false);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-
-    return () => {
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [anyModalOpen]);
-
-  // Helper: close modal AND clean up the pushed history entry
+  // Helper: close all modals safely without History API hacks
   const closeModal = () => {
-    if (anyModalOpen) {
-      window.history.back(); // This pops the dummy state we pushed
-    }
+    setIsModalOpen(false);
+    setIsSalesModalOpen(false);
+    setIsLowStockModalOpen(false);
   };
 
   const salesToday = useMemo(() => {
@@ -851,15 +828,22 @@ function InventoryApp() {
               </button>
             ))}
           </div>
-          <div className="flex-1 overflow-y-auto px-6 pb-4 no-scrollbar">
+          <div 
+            className="flex-1 overflow-y-auto px-6 pb-4 no-scrollbar"
+            onClick={() => setActiveProductActionId(null)}
+          >
             <div className="grid grid-cols-2 gap-4">
               {filteredProducts.map((product) => (
                 <motion.div 
-                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
                   key={product.id}
                   whileTap={{ scale: 0.98 }}
-                  onClick={() => setActiveProductActionId(activeProductActionId === product.id ? null : product.id)}
-                  className="relative group bg-white rounded-2xl overflow-hidden border border-slate-100 premium-shadow transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveProductActionId(activeProductActionId === product.id ? null : product.id);
+                  }}
+                  className="relative bg-white rounded-2xl overflow-hidden border border-slate-100 premium-shadow transition-all"
                 >
                   <div className="aspect-square bg-slate-100 relative overflow-hidden">
                     <img 
@@ -868,8 +852,8 @@ function InventoryApp() {
                       src={product.image}
                       referrerPolicy="no-referrer"
                     />
-                    {/* Hover & Tap Controls */}
-                    <div className={`absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/20 transition-opacity ${activeProductActionId === product.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    {/* Tap Controls */}
+                    <div className={`absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/20 transition-opacity ${activeProductActionId === product.id ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
                       <div className="flex gap-2">
                         <button 
                           onClick={(e) => {
